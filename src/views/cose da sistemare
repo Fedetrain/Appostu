@@ -1,0 +1,76 @@
+const exportaInGoogleCalendar = () => {
+  console.log("esporta in google calendar");
+  // Converte le date in oggetti Date
+  const startDate = new Date();
+  const endDate = new Date();
+
+  // Formatta le date per Google Calendar
+  const start = startDate.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15); // YYYYMMDDTHHMM
+  const end = endDate.toISOString().replace(/-|:|\.\d+/g, '').substring(0, 15);     // YYYYMMDDTHHMM
+
+  const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("ricordatixs")}&dates=${start}/${end}&details=&location=`;
+
+  // Apri il link in una nuova finestra
+  window.open(googleCalendarUrl, '_blank');
+};
+
+
+async function initialize() {
+    console.log("Inizio dell'inizializzazione di AdMob...");
+  
+    // Controlla lo stato di autorizzazione del tracking
+    try {
+      const status = await AdMob.trackingAuthorizationStatus();
+      console.log("Stato AdMob:", status);
+    } catch (error) {
+      console.error("Errore nel controllo dello stato di autorizzazione del tracking:", error);
+    }
+  
+    // Inizializza AdMob
+    try {
+      await AdMob.initialize({
+        requestTrackingAuthorization: true,
+        initializeForTesting: true, // Questo dovrebbe essere true solo in fase di test
+      });
+      console.log("AdMob inizializzato con successo.");
+    } catch (error) {
+      console.error("Errore durante l'inizializzazione di AdMob:", error);
+      return; // Ferma l'esecuzione se l'inizializzazione fallisce
+    }
+  
+    // Opzioni per l'annuncio banner
+    const bannerOptions = {
+      adId: 'ca-app-pub-9010134003844365/9069352640', // ID di test per AdMob
+      adSize: BannerAdSize.BANNER,
+      position: 'end',
+    };
+  
+    // Aggiungi listener per gestire l'errore di caricamento
+    AdMob.addListener('onAdFailedToLoad', (error) => {
+      console.error("Errore nel caricamento dell'annuncio:", error);
+    });
+  
+    // Mostra il banner
+    try {
+      console.log("Tentativo di mostrare l'annuncio banner...");
+      await AdMob.showBanner(bannerOptions);
+      console.log("Annuncio banner mostrato con successo.");
+    } catch (error) {
+      console.error("Errore durante la visualizzazione del banner:", error);
+    }
+  }
+  
+  
+
+  const signInWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      user.value = result.user;
+      console.log("Accesso riuscito:", user.value);
+      // Puoi gestire l'utente autenticato come preferisci
+    } catch (err) {
+      error.value = err.message;
+      console.error("Errore durante l'accesso:", error.value);
+    }
+  };
+    

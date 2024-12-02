@@ -33,7 +33,7 @@
       message="Le notifiche sono molto importanti perché ti permettono di ricevere comunicazioni riguardo le tue prenotazioni. Vuoi attivare le notifiche ora?"
       :buttons="[
         { text: 'Annulla', role: 'cancel', handler: () => showRationale = false },
-        { text: 'Attiva', handler: retryPermissionRequest }
+        { text: 'Attiva', handler: requestNotificationPermission }
       ]"
     />
       <!-- Popover per i contatti -->
@@ -68,7 +68,7 @@ import { homeOutline, calendarOutline, personOutline, chatbubbleSharp } from 'io
 import { getFirestore, collection, addDoc,doc,setDoc } from 'firebase/firestore';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
-
+import { App } from '@capacitor/app';
 
 import { getAuth} from "firebase/auth";
 
@@ -82,6 +82,8 @@ const mostraPopover = ref(false);
 const segnalazione = ref('');
 const showAlert = ref(false); // Stato per il controllo dell'alert
 const showRationale = ref(false); // Stato per il controllo dell'alert
+let backButtonPressedOnce = false; // Variabile per tracciare il primo tocco
+const exitAppTimeout = ref(null); // Timer per il reset
 
 
 
@@ -90,20 +92,45 @@ const showRationale = ref(false); // Stato per il controllo dell'alert
 function togglePopover() {
   mostraPopover.value = !mostraPopover.value;
 }
+
+
 const requestNotificationPermission = () => {
+
   PushNotifications.requestPermissions().then((result) => {
     if (result.receive === 'granted') {
-      // Permesso concesso
       PushNotifications.register();
     } else {
-      // Mostra il rationale se l'utente ha rifiutato
       console.log('Permission not granted for push notifications');
       showRationale.value = true;
     }
   });
+
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    const notificationId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+    console.log('Notification received: ', notification);
+        LocalNotifications.schedule({
+          notifications: [
+            {
+              id: notificationId,
+              title: notification.title,
+              body: notification.body,
+              schedule: { at: new Date(Date.now() + 1000) }, // Mostra dopo 1 secondo
+              sound: 'default', // Suono di default
+            },
+          ],
+        });
+  });
+
+  PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+    console.log('Notification action performed: ', notification);
+  });  
+
+  PushNotifications.addListener('registration', (token) => {
+    console.log('Push registration success, token: ', token.value);
+    updateNotificationToken(token.value)
+  });
 };
 
-// Funzione per ripetere la richiesta permesso dopo il rationale
 const retryPermissionRequest = () => {
   showRationale.value = false; // Nasconde il rationale
   PushNotifications.requestPermissions().then((result) => {
@@ -169,39 +196,21 @@ const updateNotificationToken = async (token) => {
 
 
 onMounted(async () => {
-  const notificationId = Math.floor(Date.now() / 1000); // ID intero basato su secondi
-  console.log("onmounted tabpage Cliente")
-  requestNotificationPermission();
 
+  App.addListener('backButton', async () => {
+      if (backButtonPressedOnce) {
+        App.exitApp();
+      } else {
+        backButtonPressedOnce = true;
+        presentToast("Premi di nuovo indietro per uscire dall'app");
 
-// Listener per le notifiche ricevute mentre l’app è aperta
-PushNotifications.addListener('pushNotificationReceived', (notification) => {
-  console.log('Notification received: ', notification);
-      LocalNotifications.schedule({
-        notifications: [
-          {
-            id: notificationId,
-            title: notification.title,
-            body: notification.body,
-            schedule: { at: new Date(Date.now() + 1000) }, // Mostra dopo 1 secondo
-            sound: 'default', // Suono di default
-          },
-        ],
-      });
-});
-
-// Listener per le notifiche cliccate dall’utente
-PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-  console.log('Notification action performed: ', notification);
-});  
-
-// Ascolta il token di registrazione per l’invio di notifiche
-PushNotifications.addListener('registration', (token) => {
-  console.log('Push registration success, token: ', token.value);
-  updateNotificationToken(token.value)
-  // Qui puoi inviare il token al server per l’invio delle notifiche
-});
-
+        exitAppTimeout.value = setTimeout(() => {
+          backButtonPressedOnce = false;
+        }, 2000);
+      }
+  });
+  requestNotificationPermission()
+  
 });
     
 </script>

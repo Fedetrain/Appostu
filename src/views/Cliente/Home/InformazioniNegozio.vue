@@ -389,8 +389,12 @@ ion-modal {
 }
 
 .div-description {
-  margin: 16px 0;
-  padding: 3px;
+  margin: 2px;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10%;
+  border: 2px dashed #e27108;
 }
 
 .description-label {
@@ -398,6 +402,7 @@ ion-modal {
 }
 
 .store-description {
+  margin-top: 0%;
   font-size: em;
 }
 
@@ -408,6 +413,7 @@ ion-modal {
 }
 
 .calendar-picker {
+  background-color: #e2710839;
   width: 100%;
   max-width: 400px;
   border-radius: 10px; /* Angoli arrotondati per un look moderno */

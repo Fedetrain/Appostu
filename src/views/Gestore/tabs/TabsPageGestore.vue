@@ -37,7 +37,7 @@
       message="Le notifiche sono molto importanti perché ti permettono di ricevere comunicazioni riguardo le tue prenotazioni. Vuoi attivare le notifiche ora?"
       :buttons="[
         { text: 'Annulla', role: 'cancel', handler: () => showRationale = false },
-        { text: 'Attiva', handler: retryPermissionRequest }
+        { text: 'Attiva', handler: requestNotificationPermission }
       ]"
     />
 
@@ -150,41 +150,48 @@ const updateNotificationToken = async (token) => {
   }
 };
 
-
 const requestNotificationPermission = () => {
+
   PushNotifications.requestPermissions().then((result) => {
     if (result.receive === 'granted') {
-      // Permesso concesso
       PushNotifications.register();
     } else {
-      // Mostra il rationale se l'utente ha rifiutato
       console.log('Permission not granted for push notifications');
       showRationale.value = true;
     }
   });
-};
 
-// Funzione per ripetere la richiesta permesso dopo il rationale
-const retryPermissionRequest = () => {
-  showRationale.value = false; // Nasconde il rationale
-  PushNotifications.requestPermissions().then((result) => {
-    if (result.receive === 'granted') {
-      PushNotifications.register();
-      console.log('Permission granted after retry');
-    } else {
-      showAlert.value = true; // Mostra alert definitivo se ancora rifiutato
-      console.log('Permission still not granted after retry');
-    }
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    const notificationId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
+
+    console.log('Notification received: ', notification);
+        LocalNotifications.schedule({
+          notifications: [
+            {
+              id: notificationId,
+              title: notification.title,
+              body: notification.body,
+              schedule: { at: new Date(Date.now() + 1000) }, // Mostra dopo 1 secondo
+              sound: 'default', // Suono di default
+            },
+          ],
+        });
   });
+
+  PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+    console.log('Notification action performed: ', notification);
+  });  
+
+  PushNotifications.addListener('registration', (token) => {
+    console.log('Push registration success, token: ', token.value);
+    updateNotificationToken(token.value)
+  });
+  
 };
 
 // Ciclo di vita onMounted
 onMounted(async () => {
-  requestNotificationPermission()
-  console.log("onmounted tabpage GEstore");
-
   App.addListener('backButton', async () => {
-    if (route.path.includes('/gestore/tabs')) {
       if (backButtonPressedOnce) {
         App.exitApp();
       } else {
@@ -195,47 +202,11 @@ onMounted(async () => {
           backButtonPressedOnce = false;
         }, 2000);
       }
-    } else {
-      router.back();
-    }
   });
+
+  requestNotificationPermission()
   
-
- 
-
-  const notificationId = Math.floor(Date.now() / 1000); // ID intero basato su secondi
-
-  // Listener per le notifiche ricevute mentre l’app è aperta
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('Notification received: ', notification.title, notification.body);
-    const formattedBody = notification.body.replace('. ', '.\n'); // Inserisce un a capo dopo ogni punto.
-
-    LocalNotifications.schedule({
-      notifications: [
-        {
-          id: notificationId,
-          title: notification.title,
-          body: formattedBody,
-          schedule: { at: new Date(Date.now() + 1000) }, // Mostra dopo 1 secondo
-          sound: 'default', // Suono di default
-          extra: { style: "bigtext" }, // Abilita BigTextStyle su Android per mostrare testo completo
-        },
-      ],
-    });
-  });
-
-  // Listener per le notifiche cliccate dall’utente
-  PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-    console.log('Notification action performed: ', notification);
-  });
-
   
-
-  // Listener per la registrazione del token delle notifiche
-  PushNotifications.addListener('registration', (token) => {
-    console.log('Push registration success, token: ', token.value);
-    updateNotificationToken(token.value);
-  });
 });
 </script>
 

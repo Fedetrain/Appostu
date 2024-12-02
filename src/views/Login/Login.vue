@@ -43,8 +43,8 @@
           
         </div>
 
-        <ion-button class="login-button" @click="loginButtonClick" color="primary">Login</ion-button>
-        <ion-button class="register-button" @click="registratiButtonClick" color="secondary">Register</ion-button>
+        <ion-button class="login-button" @click="loginButtonClick" color="primary">Accedi</ion-button>
+        <ion-button class="register-button" @click="registratiButtonClick" color="secondary">Registrati</ion-button>
         <p class="forgot-password" @click="presentAlertPasswordDimenticata()">Password dimenticata?</p>
 
         <div v-if="error" class="error-message">{{ error }}</div>

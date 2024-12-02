@@ -145,6 +145,7 @@
 
 onMounted(async () => {
     const user = auth.currentUser;
+    mostraProgresBar.value=true
     
     if (user) {
         try {
@@ -159,6 +160,8 @@ onMounted(async () => {
     } else {
         console.log('Nessun utente autenticato.');
     }
+    mostraProgresBar.value=false
+
 });
     
 </script>

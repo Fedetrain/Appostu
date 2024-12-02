@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AppuntamentiV2</string>
-    <string name="title_activity_main">AppuntamentiV2</string>
+    <string name="app_name">Appostu</string>
+    <string name="title_activity_main">Appostu</string>
     <string name="package_name">app.federico.traina</string>
     <string name="custom_url_scheme">app.federico.traina</string>
     <string name="admob_app_id">ca-app-pub-9010134003844365~9595974409</string>

@@ -4,6 +4,7 @@
       <ion-toolbar color="primary">
         <ion-title>Gestione Ferie</ion-title>
         <BackButton></BackButton>
+        <ion-loading :is-open="isOpenLoading" message="Please wait..."></ion-loading>
       </ion-toolbar>
     </ion-header>
 
@@ -12,12 +13,13 @@
         <ion-item class="date-item">
           <ion-label position="stacked">Seleziona la data di ferie</ion-label>
           <ion-datetime
+            presentation="date"
             display-format="DD-MM-YYYY"
             class="date-picker"
             v-model="selectedDate"
           ></ion-datetime>
         </ion-item>
-        <ion-button expand="block" @click="saveVacation" class="submit-button">
+        <ion-button expand="block" @click="openAlert" class="submit-button">
           Salva Ferie
         </ion-button>
         <div v-if="message" class="success-message">{{ message }}</div>
@@ -29,11 +31,23 @@
             <ion-button color="danger" @click="deleteVacation(vacation.id)">Elimina</ion-button>
           </ion-item>
         </ion-list>
+
+        <ion-alert
+      :is-open="showAlert"
+      header="Attenzione!!"
+      message="Aggiungendo il giorno di ferie, tutte le prenotazioni per la data selezionata saranno rimosse. I clienti saranno informati della cancellazione. Sei sicuro di voler continuare?"
+      :buttons="[
+        { text: 'Annulla', role: 'cancel', handler: () => showAlert = false },
+        { text: 'Attiva', handler: saveVacation }
+      ]"
+    />
     </ion-content>
   </ion-page>
 </template>
 
-<script setup lang="ts">
+
+
+<script setup>
 import { ref, onMounted } from 'vue';
 import {
   IonPage,
@@ -45,104 +59,204 @@ import {
   IonItem,
   IonLabel,
   IonDatetime,
-  IonList
+  IonList,
+  IonLoading,
+  IonAlert
 } from '@ionic/vue';
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore'; // Importa serverTimestamp
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, Timestamp, query, where } from 'firebase/firestore';
 import BackButton from '@/views/Components/BackButton.vue';
 import { useStore } from 'vuex';
 
 const db = getFirestore();
 const store = useStore();
 
-const selectedDate = ref();
-const message = ref<string | null>(null);
-const vacationDays = ref<{ id: string; date: string }[]>([]); // Array to hold vacation days
+const selectedDate = ref(''); // Gestire la data come stringa
+const message = ref('');
+const vacationDays = ref([]); // Array vuoto per le ferie
+const isOpenLoading = ref(false);
+const showAlert= ref(false)
 
-const formatDate = (dateString: string): string => {
+
+const openAlert = () => {
+  showAlert.value = true;
+};
+
+// Funzione per formattare la data
+const formatDate = (dateString) => {
   const date = new Date(dateString);
-  const options: Intl.DateTimeFormatOptions = {
-    weekday: 'long', // Full weekday name
+  const options = {
+    weekday: 'long', // Nome del giorno della settimana
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   };
-  // Format date to "Mercoledì 02-11-2024"
   return date.toLocaleDateString('it-IT', options).replace(',', '').replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/, '$1-$2-$3');
 };
 
+// Funzione per rimuovere le prenotazioni per una data
+const removeReservationsByDate = async (dataSelezionata) => {
+  const storeId = store.getters.getIdDocumentNegozioGestore;
+  if (!storeId) {
+    message.value = 'Store ID non trovato.';
+    console.log("Errore: Store ID non trovato.");
+    return;
+  }
+
+  try {
+    console.log("Store ID trovato:", storeId);
+
+    const startOfDay = new Date(dataSelezionata);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(dataSelezionata);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    console.log("Inizio giornata (startOfDay):", startOfDay);
+    console.log("Fine giornata (endOfDay):", endOfDay);
+
+    const startTimestamp = Timestamp.fromDate(startOfDay);
+    const endTimestamp = Timestamp.fromDate(endOfDay);
+
+    console.log("Timestamp di inizio giornata:", startTimestamp);
+    console.log("Timestamp di fine giornata:", endTimestamp);
+
+    const prenotazioniRef = collection(db, "Prenotazioni");
+    const q = query(
+      prenotazioniRef,
+      where("idDocumentNegozio", "==", storeId),
+      where("dataPrenotazione", ">=", startTimestamp),
+      where("dataPrenotazione", "<=", endTimestamp)
+    );
+
+    console.log("Query in esecuzione:", q);
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      console.log("Nessuna prenotazione trovata per la data selezionata.");
+      message.value = 'Nessuna prenotazione trovata per la data selezionata.';
+      return;
+    }
+
+    console.log("Prenotazioni trovate:", querySnapshot.docs.length);
+    querySnapshot.docs.forEach(doc => {
+      console.log("Documento prenotazione da eliminare:", doc.id, doc.data());
+    });
+
+    // Elimina ogni prenotazione trovata
+    const deletePromises = querySnapshot.docs.map(doc => {
+      console.log("Eliminando documento:", doc.id);
+      return deleteDoc(doc.ref);
+    });
+    
+    await Promise.all(deletePromises);
+
+    console.log("Tutti i documenti sono stati eliminati.");
+
+    message.value = 'Prenotazioni rimosse con successo per la data selezionata.';
+  } catch (error) {
+    console.error("Errore nella rimozione delle prenotazioni: ", error);
+    message.value = 'Si è verificato un errore. Riprova.';
+  }
+};
+
+// Funzione per salvare un giorno di ferie
 const saveVacation = async () => {
+  isOpenLoading.value = true;
+
   if (!selectedDate.value) {
     message.value = 'Per favore, seleziona una data.';
     return;
   }
 
-  const storeId = store.getters.getIdDocumentNegozioGestore; // Get the store ID from Vuex store
+  const storeId = store.getters.getIdDocumentNegozioGestore;
   if (!storeId) {
     message.value = 'Store ID non trovato.';
     return;
   }
 
   try {
-    // Crea un oggetto Date dalla data selezionata
     const dataSelezionata = new Date(selectedDate.value);
-    dataSelezionata.setHours(0)
-    dataSelezionata.setMilliseconds(0)
-    dataSelezionata.setMinutes(0)
-    dataSelezionata.setSeconds(0)
+    dataSelezionata.setHours(0);
+    dataSelezionata.setMilliseconds(0);
+    dataSelezionata.setMinutes(0);
+    dataSelezionata.setSeconds(0);
     
-    // Crea un timestamp da quell'oggetto Date
-    const timestamp = Timestamp.fromDate(dataSelezionata);
+    const ferieRef = collection(db, "Negozi", storeId, "Ferie");
+    const q = query(ferieRef, where("date", "==", selectedDate.value));
+    const querySnapshot = await getDocs(q);
 
+    if (!querySnapshot.empty) {
+      message.value = 'Un giorno di ferie per questa data è già stato aggiunto.';
+      isOpenLoading.value = false;
+      return;
+    }
+    const timestamp = Timestamp.fromDate(dataSelezionata);
 
     await addDoc(collection(db, "Negozi", storeId, "Ferie"), {
       date: selectedDate.value,
-      timestamp: timestamp // Aggiungi il timestamp
+      timestamp: timestamp
     });
 
     message.value = 'Ferie salvate con successo!';
-    selectedDate.value = null; // Reset the date picker
-    await fetchVacationDays(); // Refresh the vacation days list
+    selectedDate.value = ''; // Reset data selezionata
+    await removeReservationsByDate(dataSelezionata);
+    await fetchVacationDays(); // Ricarica la lista dei giorni di ferie
   } catch (error) {
     console.error("Errore nel salvataggio delle ferie: ", error);
     message.value = 'Si è verificato un errore. Riprova.';
-  }
-};
-const fetchVacationDays = async () => {
-  try {
-    const storeId = store.getters.getIdDocumentNegozioGestore; // Fetch store ID
-    // Fetch documents from the 'Ferie' collection under the specific store in 'Negozi'
-    const querySnapshot = await getDocs(collection(db, "Negozi", storeId, "Ferie"));
-    vacationDays.value = querySnapshot.docs.map(doc => ({
-      id: doc.id,         // Document ID
-      date: doc.data().date // Vacation day stored in the document
-    }));
-    console.log("Ferie recuperate", vacationDays.value);
-  } catch (error) {
-    console.error("Errore nel recupero dei giorni di ferie: ", error);
+  } finally {
+    isOpenLoading.value = false;
+    showAlert.value = false;
+
   }
 };
 
-const deleteVacation = async (id: string) => {
-  const storeId = store.getters.getIdDocumentNegozioGestore; // Fetch store ID
+// Funzione per recuperare i giorni di ferie
+const fetchVacationDays = async () => {
+  isOpenLoading.value = true;
   try {
-    await deleteDoc(doc(db, "Negozi", storeId, "Ferie", id)); // Delete the vacation day document
+    const storeId = store.getters.getIdDocumentNegozioGestore;
+    const querySnapshot = await getDocs(collection(db, "Negozi", storeId, "Ferie"));
+    vacationDays.value = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        date: data.date || 'Data non disponibile' // Gestione del caso senza 'date'
+      };
+    });
+    console.log("Ferie recuperate:", vacationDays.value);
+  } catch (error) {
+    console.error("Errore nel recupero dei giorni di ferie: ", error);
+  } finally {
+    isOpenLoading.value = false;
+  }
+};
+
+// Funzione per eliminare un giorno di ferie
+const deleteVacation = async (id) => {
+  isOpenLoading.value = true;
+
+  const storeId = store.getters.getIdDocumentNegozioGestore;
+  try {
+    await deleteDoc(doc(db, "Negozi", storeId, "Ferie", id));
     message.value = 'Ferie eliminate con successo!';
-    await fetchVacationDays(); // Refresh the vacation days list
+    await fetchVacationDays(); // Ricarica la lista dei giorni di ferie
   } catch (error) {
     console.error("Errore nella cancellazione delle ferie: ", error);
     message.value = 'Si è verificato un errore. Riprova.';
+  } finally {
+    isOpenLoading.value = false;
   }
 };
 
-// Fetch vacation days when the component is mounted
+// Fetch dei giorni di ferie quando il componente viene montato
 onMounted(fetchVacationDays);
 </script>
 
 
+
 <style scoped>
-.content-background {
-  --background: #f5f5f5;
-}
+
 .div {
   display: flex;
   flex-direction: column;
@@ -151,21 +265,14 @@ onMounted(fetchVacationDays);
 
 .date-item {
   --border-radius: 10px;
-  --background: #f1f1f1;
   margin-bottom: 15px;
 }
 
 .date-picker {
-  --background: #ffffff;
   --border-radius: 8px;
 }
 
-.submit-button {
-  --background: #3880ff;
-  --border-radius: 10px;
-  --background-hover: #3171e0;
-  --background-activated: #2e62d6;
-}
+
 
 .success-message {
   margin-top: 15px;

@@ -136,7 +136,7 @@ function cercaPerCitta(event) {
   console.log("cercaper citta")
 
   if (searchValue === "") {
-    suggestions.value = [nomiComuniFiltrativalue];
+    suggestions.value = nomiComuniFiltrativalue;
   } else {
     // Filtra le città che contengono la ricerca dell'utente
     console.log(nomiComuniFiltrativalue)
@@ -203,6 +203,7 @@ const loadNegozi = async (citta_cliente) => {
 };
 
 const recuperaImmagini = async () => {
+  mostraProgresBar.value=true;
   progress.value = 0; // Reset del progresso
   const totalDocs = items.value.length; // Numero totale di negozi
   
@@ -242,9 +243,10 @@ const recuperaImmagini = async () => {
     };
   }));
 
-  // Una volta che tutte le immagini sono state caricate, il progresso è completo (100%)
   progress.value = 100;
   console.log('Caricamento delle immagini completato.');
+  mostraProgresBar.value=false;
+
 };
 
 
@@ -282,7 +284,7 @@ const open = (item) => {
 };
 
 onMounted(async () => {
-  mostraProgresBar.value=false
+  mostraProgresBar.value=true
 
   userUid.value= auth.currentUser.uid
   await recuperaCittaCliente()

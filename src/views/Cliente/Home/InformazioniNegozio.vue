@@ -91,7 +91,7 @@ import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { IonIcon } from '@ionic/vue';
 import { callOutline } from 'ionicons/icons';
-import { getFirestore, collection, getDoc, doc, query, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, getDoc, doc, query, getDocs ,setDoc} from 'firebase/firestore';
 import { IonPopover,IonLoading,toastController, IonButton,IonButtons,IonLabel, IonModal, IonList, IonItem, IonPage, IonBackButton, IonHeader, IonToolbar, IonTitle, IonContent, IonCard, IonCardHeader, IonDatetime } from '@ionic/vue';
 import { useRouter } from 'vue-router';
 import BackButton from '/src/views/Components/BackButton.vue';
@@ -401,10 +401,26 @@ ion-modal {
   font-weight: bold;
 }
 
-.store-description {
-  margin-top: 0%;
-  font-size: em;
+.div-description {
+  margin: 10px 0;
 }
+
+.store-description {
+  padding: 3px;
+  margin-top: 0px;
+  word-wrap: break-word; /* Viene usato per forzare la rottura del testo lungo nelle righe */
+  overflow-wrap: break-word; /* Un altro modo per gestire le parole lunghe */
+  white-space: normal; /* Garantisce che il testo si divida correttamente su più righe */
+  word-break: break-word; /* Evita che parole troppo lunghe escano dal contenitore */
+  line-height: 1.5; /* Aumenta l'interlinea per migliorare la leggibilità */
+  font-size: 1rem; /* Imposta una dimensione del testo appropriata */
+}
+
+.store-description p {
+  margin: 0;
+  padding: 0;
+}
+
 
 .div-calendar {
   margin: 16px 0;

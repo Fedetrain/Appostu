@@ -1,4 +1,4 @@
-#Mon Dec 02 17:33:51 CET 2024
+#Tue Dec 03 18:39:45 CET 2024
 base.0=C\:\\Users\\feder\\Desktop\\Ionic\\Appostu\\android\\app\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
 base.1=C\:\\Users\\feder\\Desktop\\Ionic\\Appostu\\android\\app\\build\\intermediates\\dex\\debug\\mergeLibDexDebug\\11\\classes.dex
 base.10=C\:\\Users\\feder\\Desktop\\Ionic\\Appostu\\android\\app\\build\\intermediates\\dex\\debug\\mergeLibDexDebug\\9\\classes.dex

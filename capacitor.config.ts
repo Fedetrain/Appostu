@@ -23,7 +23,6 @@ const config: CapacitorConfig = {
     },
     LocalNotifications: {
       smallIcon: "icon_notification",
-      iconColor: "#488AFF",
     },
     GoogleAuth: {
       serverClientId: "175265749386-07c82f8tcdmgltsbilki0fnnspaam1tj.apps.googleusercontent.com",

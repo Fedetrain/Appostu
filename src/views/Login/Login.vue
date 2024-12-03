@@ -3,13 +3,11 @@
     <ion-header>
       <ion-toolbar color="primary">
         <ion-title>Login</ion-title>
-        <ion-loading :is-open="isOpenLoading" message="Please wait..."></ion-loading>
       </ion-toolbar>
     </ion-header>
 
-
-
     <ion-content class="ion-padding">
+      <ion-loading :is-open="isOpenLoading" message="Please wait..."></ion-loading>
 
 
       <div class="login-container">
@@ -93,8 +91,6 @@ const togglePasswordVisibility = () => {
 
 const signInWithGoogle1 = async () => {
   try {
-    
-    // Effettua il login con Google usando Capacitor
     const googleUser = await GoogleAuth.signIn();
     console.log("Accesso a Google eseguito con successo");
     console.log("google user", googleUser);
@@ -364,41 +360,47 @@ const checkIfNegozioIsAccettato = async (proprietarioUid) => {
 
   }
 };
-
 async function checkIfDocumentExists(userUid) {
   const clienteDocRef = doc(db, "Cliente", userUid);
   const gestoreDocRef = doc(db, "Gestore", userUid);
+  const clienteBloccatoRef = doc(db, "ClientiBloccati", userUid);
 
   try {
-    const clienteDocSnapshot = await getDoc(clienteDocRef);
-    const gestoreDocSnapshot = await getDoc(gestoreDocRef);
+    // Recupera i documenti in parallelo
+    const [clienteDocSnapshot, gestoreDocSnapshot, clienteBloccatoSnapshot] = await Promise.all([
+      getDoc(clienteDocRef),
+      getDoc(gestoreDocRef),
+      getDoc(clienteBloccatoRef)
+    ]);
 
     if (auth.currentUser.email === "federico.traina01@gmail.com") {
-      router.push('/admin');
-
+      router.push('/admin'); // Se è l'admin, invialo alla pagina di amministrazione
     } else if (clienteDocSnapshot.exists()) {
-      router.replace('/cliente/tabs');
-
+      router.replace('/cliente/tabs'); // Se il documento Cliente esiste, invialo alla pagina Cliente
     } else if (gestoreDocSnapshot.exists()) {
-
-       var isAccettato= await checkIfNegozioIsAccettato(gestoreDocSnapshot.id);
-       if(isAccettato){
-      router.replace('/gestore/tabs'); // Sposta l'utente verso la pagina del gestore
-       }
-
-      
+      // Verifica se il negozio è accettato
+      const isAccettato = await checkIfNegozioIsAccettato(gestoreDocSnapshot.id);
+      if (isAccettato) {
+        router.replace('/gestore/tabs'); // Se il negozio è accettato, invialo alla pagina Gestore
+      } else {
+        presentToast("Il negozio non è ancora stato accettato.");
+      }
+    } else if (clienteBloccatoSnapshot.exists()) {
+      presentToast("Il tuo account è stato bloccato."); // Se il cliente è bloccato, mostra un messaggio
+      logout()
     } else {
-      router.push('/registrazione/sceltaUtilizzoRegistrazione');
+      router.push('/registrazione/sceltaUtilizzoRegistrazione'); // Se nessun documento esiste, manda l'utente alla registrazione
     }
   } catch (error) {
     console.error('Errore durante il recupero del documento:', error);
     presentToast("Errore durante il recupero dei dati.");
-  } finally {
   }
 }
 
 
 auth.onAuthStateChanged(async user => {
+  isOpenLoading.value= true
+
   if (user) {
     if (user.emailVerified) {
       await checkIfDocumentExists(user.uid);
@@ -407,7 +409,7 @@ auth.onAuthStateChanged(async user => {
     }
   } else {
     console.log('Nessun utente loggato');
-    router.push('/login');
+    router.replace('/login');
   }
   isOpenLoading.value= false
   //SplashScreen.hide();

@@ -4,17 +4,17 @@
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="tab1gestore" href="/gestore/tabs/tab1gestore">
-          <ion-icon aria-hidden="true" :icon="homeOutline" />
+          <ion-icon :icon="homeOutline" />
           <ion-label>Home</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab2gestore" href="/gestore/tabs/tab2gestore">
-          <ion-icon aria-hidden="true" :icon="calendarOutline" />
+          <ion-icon  :icon="calendarOutline" />
           <ion-label>Prenotazioni</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab3gestore" href="/gestore/tabs/tab3gestore">
-          <ion-icon aria-hidden="true" :icon="personOutline" />
+          <ion-icon  :icon="personOutline" />
           <ion-label>Profilo</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
@@ -152,16 +152,16 @@ const updateNotificationToken = async (token) => {
 
 const requestNotificationPermission = () => {
 
-  PushNotifications.requestPermissions().then((result) => {
+  LocalNotifications.requestPermissions().then((result) => {
     if (result.receive === 'granted') {
-      PushNotifications.register();
+      LocalNotifications.register();
     } else {
       console.log('Permission not granted for push notifications');
       showRationale.value = true;
     }
   });
-
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+  
+  LocalNotifications.addListener('pushNotificationReceived', (notification) => {
     const notificationId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
 
     console.log('Notification received: ', notification);
@@ -178,11 +178,11 @@ const requestNotificationPermission = () => {
         });
   });
 
-  PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+  LocalNotifications.addListener('pushNotificationActionPerformed', (notification) => {
     console.log('Notification action performed: ', notification);
   });  
 
-  PushNotifications.addListener('registration', (token) => {
+  LocalNotifications.addListener('registration', (token) => {
     console.log('Push registration success, token: ', token.value);
     updateNotificationToken(token.value)
   });
@@ -204,8 +204,26 @@ onMounted(async () => {
       }
   });
 
-  requestNotificationPermission()
-  
+  try {
+    // Controlla lo stato corrente dei permessi
+    const status = await LocalNotifications.checkPermissions();
+
+    if (status.display === 'granted') {
+      return
+    } /* else if (status.display === 'denied') {
+      console.warn('Notifiche disabilitate. Indirizzo l\'utente alle impostazioni.');
+      alert('Le notifiche sono disabilitate. Abilitarle nelle impostazioni del dispositivo.');
+
+      await App.openAppSettings(); */
+      else {
+      console.log('Richiedo i permessi per le notifiche...');
+      showRationale.value=true
+    }
+  } catch (error) {
+    console.error('Errore durante il controllo o la richiesta di permessi:', error);
+  }
+
+
   
 });
 </script>

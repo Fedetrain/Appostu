@@ -4,17 +4,17 @@
       <ion-router-outlet></ion-router-outlet>
       <ion-tab-bar slot="bottom">
         <ion-tab-button tab="tab1" href="/cliente/tabs/tab1">
-          <ion-icon aria-hidden="true" :icon="homeOutline" />
+          <ion-icon  :icon="homeOutline" />
           <ion-label>Home</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab2" href="/cliente/tabs/tab2">
-          <ion-icon aria-hidden="true" :icon="calendarOutline" />
+          <ion-icon :icon="calendarOutline" />
           <ion-label>Prenotazioni</ion-label>
         </ion-tab-button>
 
         <ion-tab-button tab="tab3" href="/cliente/tabs/tab3">
-          <ion-icon aria-hidden="true" :icon="personOutline" />
+          <ion-icon  :icon="personOutline" />
           <ion-label>Profilo</ion-label>
         </ion-tab-button>
       </ion-tab-bar>
@@ -96,7 +96,7 @@ function togglePopover() {
 
 const requestNotificationPermission = () => {
 
-  PushNotifications.requestPermissions().then((result) => {
+  LocalNotifications.requestPermissions().then((result) => {
     if (result.receive === 'granted') {
       PushNotifications.register();
     } else {
@@ -105,7 +105,7 @@ const requestNotificationPermission = () => {
     }
   });
 
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+  LocalNotifications.addListener('pushNotificationReceived', (notification) => {
     const notificationId = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000);
     console.log('Notification received: ', notification);
         LocalNotifications.schedule({
@@ -116,33 +116,23 @@ const requestNotificationPermission = () => {
               body: notification.body,
               schedule: { at: new Date(Date.now() + 1000) }, // Mostra dopo 1 secondo
               sound: 'default', // Suono di default
+              smallIcon: "icon_notification", // Nome del file icona per Android
+
             },
           ],
         });
   });
 
-  PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+  LocalNotifications.addListener('pushNotificationActionPerformed', (notification) => {
     console.log('Notification action performed: ', notification);
   });  
 
-  PushNotifications.addListener('registration', (token) => {
+  LocalNotifications.addListener('registration', (token) => {
     console.log('Push registration success, token: ', token.value);
     updateNotificationToken(token.value)
   });
 };
 
-const retryPermissionRequest = () => {
-  showRationale.value = false; // Nasconde il rationale
-  PushNotifications.requestPermissions().then((result) => {
-    if (result.receive === 'granted') {
-      PushNotifications.register();
-      console.log('Permission granted after retry');
-    } else {
-      showAlert.value = true; // Mostra alert definitivo se ancora rifiutato
-      console.log('Permission still not granted after retry');
-    }
-  });
-};
 
 
 // Funzione per inviare la segnalazione
@@ -209,8 +199,24 @@ onMounted(async () => {
         }, 2000);
       }
   });
-  requestNotificationPermission()
-  
+  try {
+    // Controlla lo stato corrente dei permessi
+    const status = await LocalNotifications.checkPermissions();
+
+    if (status.display === 'granted') {
+      return
+    } /* else if (status.display === 'denied') {
+      console.warn('Notifiche disabilitate. Indirizzo l\'utente alle impostazioni.');
+      alert('Le notifiche sono disabilitate. Abilitarle nelle impostazioni del dispositivo.');
+
+      await App.openAppSettings(); */
+      else {
+      console.log('Richiedo i permessi per le notifiche...');
+      showRationale.value=true
+    }
+  } catch (error) {
+    console.error('Errore durante il controllo o la richiesta di permessi:', error);
+  }  
 });
     
 </script>

@@ -1,85 +1,112 @@
 <template>
-  <ion-modal :is-open="props.isOpen" @close="closeModal()" backdrop-dismiss="true"
-             @ionModalWillPresent="onModalWillPresent"
-             @ionModalDidPresent="onModalDidPresent"
-             @ionModalWillDismiss="onModalWillDismiss"
-             @ionModalDidDismiss="onModalDidDismiss">
+  <ion-modal 
+    :is-open="props.isOpen" 
+    @close="closeModal()" 
+    backdrop-dismiss="true"
+    @ionModalWillPresent="onModalWillPresent"
+    @ionModalDidPresent="onModalDidPresent"
+    @ionModalWillDismiss="onModalWillDismiss"
+    @ionModalDidDismiss="onModalDidDismiss"
+  >
     <ion-header>
       <ion-toolbar color="primary">
-        <ion-title>Il mio Modal</ion-title>
+        <ion-title>Dettagli</ion-title>
         <ion-buttons slot="end">
-          <ion-button @click="closeModal()">close</ion-button>
+          <ion-button @click="closeModal()">Chiudi</ion-button>
         </ion-buttons>
-        <ion-loading
-          :is-open="isOpenLoading"
-          message="Please wait...">
-        </ion-loading>
       </ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding">
-      <ion-card v-if="props.prenotazioneSelected">
-        <ion-card-header>
-          <ion-card-title class="ion-text-center">Dettagli Prenotazione</ion-card-title>
-        </ion-card-header>
+      <div v-if="props.prenotazioneSelected || cliente">
+        <!-- Informazioni Prenotazione -->
+        <section class="prenotazione-section">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title class="ion-text-center">Prenotazione</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Servizio:</ion-label>
+                  <ion-text>{{ props.prenotazioneSelected.servizioSelezionato }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Durata:</ion-label>
+                  <ion-text>{{ props.prenotazioneSelected.durataServizioSelezionato }} minuti</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Ora Inizio:</ion-label>
+                  <ion-text>{{ props.prenotazioneSelected.oraInizio }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Ora Fine:</ion-label>
+                  <ion-text>{{ props.prenotazioneSelected.oraFine }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Commento:</ion-label>
+                  <ion-text>{{ props.prenotazioneSelected.commento }}</ion-text>
+                </ion-item>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
+        </section>
 
-        <ion-card-content class="modal-content">
-          <!-- Parte superiore del modal -->
-          <div class="modal-top">
-            <ion-list>
-              <ion-item>
-                <ion-label class="ion-text-bold">Servizio:</ion-label>
-                <ion-text>{{ props.prenotazioneSelected.servizioSelezionato }}</ion-text>
-              </ion-item>
-              <ion-item>
-                <ion-label class="ion-text-bold">Durata:</ion-label>
-                <ion-text>{{ props.prenotazioneSelected.durataServizioSelezionato }} minuti</ion-text>
-              </ion-item>
-              <ion-item>
-                <ion-label class="ion-text-bold">Ora Inizio:</ion-label>
-                <ion-text>{{ props.prenotazioneSelected.oraInizio }}</ion-text>
-              </ion-item>
-              <ion-item>
-                <ion-label class="ion-text-bold">Ora Fine:</ion-label>
-                <ion-text>{{ props.prenotazioneSelected.oraFine }}</ion-text>
-              </ion-item>
-              <ion-item>
-                <ion-label class="ion-text-bold">Commento:</ion-label>
-                <ion-text>{{ props.prenotazioneSelected.commento }}</ion-text>
-              </ion-item>
-            </ion-list>
-          </div>
+        <!-- Informazioni Cliente -->
+        <section class="cliente-section" v-if="cliente">
+          <ion-card>
+            <ion-card-header>
+              <ion-card-title class="ion-text-center">Cliente</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-list>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Nome:</ion-label>
+                  <ion-text>{{ cliente.nome }} {{ cliente.cognome }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Cellulare:</ion-label>
+                  <ion-text>{{ cliente.cellulare }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Email:</ion-label>
+                  <ion-text>{{ cliente.email }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Città:</ion-label>
+                  <ion-text>{{ cliente.citta }}</ion-text>
+                </ion-item>
+                <ion-item>
+                  <ion-label class="ion-text-bold">Indirizzo:</ion-label>
+                  <ion-text>{{ cliente.via }} {{ cliente.numeroCivico }}</ion-text>
+                </ion-item>
+              </ion-list>
+            </ion-card-content>
+          </ion-card>
+        </section>
 
-          <!-- Parte inferiore del modal -->
-          <div class="modal-bottom" v-if="cliente">
-            <ion-list>
-              <ion-item>
-                <ion-label class="ion-text-bold">Cliente:</ion-label>
-                <ion-text>{{ cliente.nome }} {{ cliente.cognome }}</ion-text>
-              </ion-item>
-              <ion-item>
-                <ion-label class="ion-text-bold">Cellulare Cliente:</ion-label>
-                <ion-text>{{ cliente.cellulare }}</ion-text>
-              </ion-item>
-              <ion-item>
-                <ion-label class="ion-text-bold">Email Cliene:</ion-label>
-                <ion-text>{{ cliente.email }}</ion-text>
-              </ion-item>
-              <!-- Aggiungi altri campi dell'utente come necessario -->
-            </ion-list>
-          </div>
+        <!-- Bottone Blocca Cliente -->
+        <section class="actions-section">
+          <ion-button color="danger" @click="bloccoCliente">Blocca Cliente</ion-button>
+        </section>
 
-          <!-- Icona di eliminazione -->
-          <ion-button color="danger" @click="eliminaPrenotazione()">Elimina Prenotazione</ion-button>
-        </ion-card-content>
-      </ion-card>
+        <!-- Azioni -->
+        <section class="actions-section">
+          <ion-button color="danger" expand="block" @click="eliminaPrenotazione()">Elimina Prenotazione</ion-button>
+        </section>
+      </div>
+
+      <ion-loading
+        :is-open="isOpenLoading"
+        message="Attendere..."
+      />
     </ion-content>
   </ion-modal>
 </template>
 
 <script setup>
 import { defineProps, defineEmits, ref, watchEffect, onMounted, onUnmounted } from 'vue';
-import { getFirestore, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, deleteDoc, updateDoc,setDoc,collection,query } from 'firebase/firestore';
 import {
   IonModal,
   IonItem,
@@ -100,38 +127,26 @@ import {
 } from '@ionic/vue';
 
 const props = defineProps(['isOpen', 'prenotazioneSelected']);
-const emit = defineEmits(['close-modal','ricarica-orari']);
+const emit = defineEmits(['close-modal', 'ricarica-orari']);
 const db = getFirestore();
 const cliente = ref(null);
-const isOpenLoading =ref(false)
+const isOpenLoading = ref(false);
 
-// Eseguito quando il componente viene montato
 onMounted(() => {
   console.log('Modal montato');
 });
 
-// Eseguito quando il componente viene smontato
 onUnmounted(() => {
   console.log('Modal smontato');
 });
 
-// Funzioni per gestire gli eventi del modal
-const onModalWillPresent = () => {
-  console.log('Modal sta per essere presentato');
-};
-
-const onModalDidPresent = () => {
-  console.log('Modal è stato presentato');
-};
-
+const onModalWillPresent = () => console.log('Modal sta per essere presentato');
+const onModalDidPresent = () => console.log('Modal è stato presentato');
 const onModalWillDismiss = () => {
   console.log('Modal sta per essere chiuso');
   closeModal();
 };
-
-const onModalDidDismiss = () => {
-  console.log('Modal è stato chiuso');
-};
+const onModalDidDismiss = () => console.log('Modal è stato chiuso');
 
 watchEffect(() => {
   if (props.prenotazioneSelected) {
@@ -141,8 +156,7 @@ watchEffect(() => {
 
 const recuperaInformazioniCliente = async () => {
   try {
-    isOpenLoading.value= true
-
+    isOpenLoading.value = true;
     const clienteRef = doc(db, 'Cliente', props.prenotazioneSelected.idDocumentCliente);
     const clienteDoc = await getDoc(clienteRef);
 
@@ -150,52 +164,92 @@ const recuperaInformazioniCliente = async () => {
       cliente.value = clienteDoc.data();
       console.log(cliente.value);
     } else {
-      cliente.value = null; // Resetta cliente se non esiste
+      console.log('Errore nel recupero delle informazioni cliente');
     }
-
-    isOpenLoading= false
-
   } catch (error) {
     console.error('Errore nel recupero delle informazioni del cliente:', error);
-    cliente.value = null; // Gestione dell'errore
-    isOpenLoading.value= false
+    cliente.value = null;
+  } finally {
+    isOpenLoading.value = false;
   }
 };
 
 const eliminaPrenotazione = async () => {
   try {
-    isOpenLoading.value= true
+    isOpenLoading.value = true;
     const prenotazioneRef = doc(db, 'Prenotazioni', props.prenotazioneSelected.id);
     await deleteDoc(prenotazioneRef);
     console.log('Prenotazione eliminata con successo');
-    closeModal(); // Chiudi il modal dopo l'eliminazione
+    closeModal();
     emit('ricarica-orari');
-    isOpenLoading.value= false
-
   } catch (error) {
     console.error('Errore durante l\'eliminazione della prenotazione:', error);
-    isOpenLoading.value= false
-
-    // Gestisci l'errore
+  } finally {
+    isOpenLoading.value = false;
   }
 };
 
-const closeModal = () => {
-  emit('close-modal');
+const closeModal = () => emit('close-modal');
+
+// Funzione per bloccare il cliente
+const bloccoCliente = () => {
+  const alert = window.confirm("Attenzione! Bloccare questo cliente impedirà a questa email di fare prenotazioni in futuro. Sei sicuro di voler procedere?");
+  if (alert) {
+    bloccaClienteNelDatabase();
+  }
+};
+
+const bloccaClienteNelDatabase = async () => {
+  try {
+    isOpenLoading.value = true;
+    const clienteRef = doc(db, 'Cliente', props.prenotazioneSelected.idDocumentCliente);
+    const clienteDoc = await getDoc(clienteRef);
+
+    if (clienteDoc.exists()) {
+      const clienteData = clienteDoc.data();
+
+      // Aggiungi un campo 'bloccato' al cliente, se non è già presente
+      clienteData.bloccato = true; 
+
+      // Crea il documento nella collezione 'ClientiBloccati'
+      const clienteBloccatoRef = doc(db, 'ClientiBloccati', clienteRef.id);
+      await setDoc(clienteBloccatoRef, clienteData); // Salva i dati nella collezione 'ClientiBloccati'
+
+      // Elimina il documento dalla collezione 'Cliente'
+      await deleteDoc(clienteRef);
+
+      console.log('Cliente spostato con successo nella collezione ClientiBloccati');
+      alert('Cliente bloccato con successo. Non potrà più effettuare prenotazioni.');
+    } else {
+      console.log('Cliente non trovato nella collezione Cliente.');
+    }
+  } catch (error) {
+    console.error('Errore nel bloccare il cliente:', error);
+  } finally {
+    isOpenLoading.value = false;
+  }
 };
 
 </script>
 
 <style scoped>
 ion-card {
-  margin: auto;
+  margin: 1rem 0;
 }
 
 ion-card-title {
   font-size: 1.5rem;
 }
 
-ion-card-content {
+.prenotazione-section {
+  margin-bottom: 1rem;
+}
+
+.cliente-section {
+  margin-bottom: 1rem;
+}
+
+.actions-section {
   text-align: center;
 }
 
@@ -211,34 +265,7 @@ ion-modal::part(backdrop) {
   opacity: 1;
 }
 
-ion-list {
-  padding: 0;
-}
-
-ion-item {
-  --ion-item-background: transparent;
-  --ion-item-text: #333;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap-reverse;
-}
-
-ion-label.ion-text-bold {
-  font-weight: bold;
-}
-
-ion-button {
+ion-button[color="danger"] {
   margin-top: 1rem;
-}
-
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.modal-top,
-.modal-bottom {
-  width: 100%;
 }
 </style>

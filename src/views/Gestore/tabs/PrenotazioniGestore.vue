@@ -278,11 +278,11 @@ const presentAlert = async (oraInizio, prenotato, prenotazione) => {
         const alertInputs = [
             {
                 type: 'textarea',
-                placeholder: 'Inserisci nome cliente',
+                placeholder: 'Inserisci il nome del cliente',
             },
             {
                 type: 'textarea',
-                placeholder: 'Inserisci scelta utente',
+                placeholder: 'Inserisci eventuale descrizione',
             },
         ];
 
